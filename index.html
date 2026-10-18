@@ -30,7 +30,7 @@ a{color:var(--accent)}
 </style>
 </head>
 <body>
-<h1>読み取り速さの試し（在庫・道具）</h1>
+<h1>読み取り速さの試し（在庫・道具）2版</h1>
 <p class="note">はじめに作業と名前を1回だけ選び、「読み取り開始」。あとはQRやバーコードを次々に向けるだけで数えます。試し用のQRは <a href="sheet.html" target="_blank">こちらの紙（画面）</a>。</p>
 <div class="row">
   <select id="mode">
@@ -50,7 +50,7 @@ a{color:var(--accent)}
   <div class="stat"><b id="avg">-</b><span>1件あたり秒</span></div>
 </div>
 <table><thead><tr><th>読んだ物</th><th style="text-align:right">数</th></tr></thead><tbody id="list"></tbody></table>
-<p class="note">同じ物を1秒以内に続けて読んだ時は2件に数えません（2度読み止め）。データはこのスマホの中だけで、どこにも送りません。</p>
+<p class="note">同じ物を続けて読んだ時は2件に数えません（別の物を読むまで数えない＝2度読み止め）。データはこのスマホの中だけで、どこにも送りません。</p>
 <div id="flash"></div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
@@ -67,7 +67,7 @@ function render(){
 }
 function onScan(code){
   const now=Date.now();
-  if(code===lastCode&&now-lastAt<1000){lastAt=now;return}
+  if(code===lastCode){lastAt=now;return}
   lastCode=code;lastAt=now;
   const l=label(code);
   counts[code]=counts[code]||{l,c:0,t:0};counts[code].c++;counts[code].t=now;total++;times.push(now);
@@ -80,7 +80,7 @@ $('start').onclick=async()=>{
   if(scanner){await scanner.stop();scanner=null;$('start').textContent='読み取り開始';return}
   scanner=new Html5Qrcode('reader',{experimentalFeatures:{useBarCodeDetectorIfSupported:true},verbose:false});
   try{
-    await scanner.start({facingMode:'environment'},{fps:20,qrbox:(w,h)=>{const s=Math.floor(Math.min(w,h)*0.8);return{width:s,height:Math.floor(s*0.7)}}},onScan,()=>{});
+    await scanner.start({facingMode:'environment'},{fps:30,disableFlip:true,videoConstraints:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:'continuous'}]}},onScan,()=>{});
     $('start').textContent='止める';
   }catch(e){$('last').textContent='カメラが使えませんでした：'+e;scanner=null}
 };

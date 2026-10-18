@@ -9,9 +9,9 @@
 body{margin:0;background:#fff;color:#111;font:14px/1.4 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:16px}
 h1{font-size:16px;margin:0 0 4px}
 p{margin:0 0 12px;color:#555;font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.lb{border:1px solid #ccc;border-radius:6px;padding:8px;display:flex;gap:8px;align-items:center;background:#fff}
-.lb svg{width:64px;height:64px;flex:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.lb{border:1px solid #ccc;border-radius:6px;padding:12px;display:flex;gap:10px;align-items:center;background:#fff}
+.lb svg{width:120px;height:120px;flex:none}
 .lb b{display:block;font-size:12px}
 .lb span{font-size:10px;color:#666;letter-spacing:.04em}
 </style>
@@ -33,7 +33,7 @@ const g=document.getElementById('g');
 items.forEach(([c,n])=>{
   const q=qrcode(0,'M');q.addData('NN:'+c+' '+n);q.make();
   const d=document.createElement('div');d.className='lb';
-  d.innerHTML=q.createSvgTag({cellSize:2,margin:0,scalable:true});
+  d.innerHTML=q.createSvgTag({cellSize:2,margin:2,scalable:true});
   const t=document.createElement('div');t.innerHTML='<b></b><span></span>';
   t.querySelector('b').textContent=n;t.querySelector('span').textContent=c;
   d.append(t);g.append(d);
