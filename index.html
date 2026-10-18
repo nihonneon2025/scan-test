@@ -30,7 +30,7 @@ a{color:var(--accent)}
 </style>
 </head>
 <body>
-<h1>読み取り速さの試し（在庫・道具）2版</h1>
+<h1>読み取り速さの試し（在庫・道具）3版</h1>
 <p class="note">はじめに作業と名前を1回だけ選び、「読み取り開始」。あとはQRやバーコードを次々に向けるだけで数えます。試し用のQRは <a href="sheet.html" target="_blank">こちらの紙（画面）</a>。</p>
 <div class="row">
   <select id="mode">
@@ -50,7 +50,7 @@ a{color:var(--accent)}
   <div class="stat"><b id="avg">-</b><span>1件あたり秒</span></div>
 </div>
 <table><thead><tr><th>読んだ物</th><th style="text-align:right">数</th></tr></thead><tbody id="list"></tbody></table>
-<p class="note">同じ物を続けて読んだ時は2件に数えません（別の物を読むまで数えない＝2度読み止め）。データはこのスマホの中だけで、どこにも送りません。</p>
+<p class="note">1度読んだ物は、もう一度カメラに入っても数えません（隣のQRが一緒に映っても増えない）。数は一覧の数字を押して打ち直せます。データはこのスマホの中だけで、どこにも送りません。</p>
 <div id="flash"></div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
@@ -63,11 +63,11 @@ function render(){
   $('total').textContent=total;$('kinds').textContent=Object.keys(counts).length;
   if(times.length>1){$('avg').textContent=((times[times.length-1]-times[0])/1000/(times.length-1)).toFixed(2)}
   $('list').innerHTML='';
-  Object.entries(counts).sort((a,b)=>b[1].t-a[1].t).forEach(([k,v])=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=v.l;const b=document.createElement('td');b.className='n';b.textContent=v.c;tr.append(a,b);$('list').append(tr)});
+  Object.entries(counts).sort((a,b)=>b[1].t-a[1].t).forEach(([k,v])=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=v.l;const b=document.createElement('td');b.className='n';const i=document.createElement('input');i.type='number';i.inputMode='numeric';i.min=0;i.value=v.c;i.style.width='5em';i.style.textAlign='right';i.onchange=()=>{v.c=Number(i.value)||0};b.append(i);tr.append(a,b);$('list').append(tr)});
 }
 function onScan(code){
   const now=Date.now();
-  if(code===lastCode){lastAt=now;return}
+  if(code===lastCode||counts[code]){lastAt=now;return}
   lastCode=code;lastAt=now;
   const l=label(code);
   counts[code]=counts[code]||{l,c:0,t:0};counts[code].c++;counts[code].t=now;total++;times.push(now);
