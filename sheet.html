@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>試し用のQR（見本）</title>
+<style>
+body{margin:0;background:#fff;color:#111;font:14px/1.4 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:16px}
+h1{font-size:16px;margin:0 0 4px}
+p{margin:0 0 12px;color:#555;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.lb{border:1px solid #ccc;border-radius:6px;padding:8px;display:flex;gap:8px;align-items:center;background:#fff}
+.lb svg{width:64px;height:64px;flex:none}
+.lb b{display:block;font-size:12px}
+.lb span{font-size:10px;color:#666;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<h1>試し用のQR（見本・名前は仮）</h1>
+<p>パソコンの画面にこのページを出し、スマホの試しの画面で端から順に読んでください。シールの大きさ・見た目の見本も兼ねています（文字は品番と名前だけ・店名なし）。</p>
+<div class="grid" id="g"></div>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+const items=[
+ ['LT-5050-W','テープライト 白 5m'],['LT-5050-WW','テープライト 電球色 5m'],['LT-NEON-R','ネオンチューブ 赤 1m'],
+ ['AL-1616','アルミフレーム 16mm'],['SC-1616','シリコンカバー 16mm'],['PS-12V-60','電源 12V 60W'],
+ ['CT-DIM','調光器'],['CN-2P','接続コネクタ 2ピン'],
+ ['TL-DR-01','電動ドリル 1号'],['TL-IMP-01','インパクト 1号'],['TL-GR-01','グラインダー 1号'],['TL-LAD-01','脚立 1号'],
+ ['MT-CBL-2','ケーブル 2sq 100m'],['MT-BOLT-M8','ボルト M8 箱']
+];
+const g=document.getElementById('g');
+items.forEach(([c,n])=>{
+  const q=qrcode(0,'M');q.addData('NN:'+c+' '+n);q.make();
+  const d=document.createElement('div');d.className='lb';
+  d.innerHTML=q.createSvgTag({cellSize:2,margin:0,scalable:true});
+  const t=document.createElement('div');t.innerHTML='<b></b><span></span>';
+  t.querySelector('b').textContent=n;t.querySelector('span').textContent=c;
+  d.append(t);g.append(d);
+});
+</script>
+</body>
+</html>

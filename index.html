@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>読み取り速さの試し</title>
+<style>
+:root{--bg:#f3f5f4;--fg:#1b2420;--sub:#5b6a63;--card:#fff;--line:#d5ddd9;--ok:#0f8a5f;--warn:#b5600b;--accent:#155e75}
+@media (prefers-color-scheme:dark){:root{--bg:#111715;--fg:#e8efec;--sub:#9aaba3;--card:#1a2320;--line:#2c3934;--ok:#3ccf91;--warn:#f0a050;--accent:#5fb8d4;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(12px,env(safe-area-inset-left))}
+h1{font-size:17px;margin:12px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button{cursor:pointer}
+button.main{background:var(--accent);color:#fff;border:0;font-weight:700;flex:1}
+#reader{width:100%;max-width:520px;margin:10px auto;border-radius:12px;overflow:hidden;background:#000}
+#flash{position:fixed;inset:0;pointer-events:none;background:var(--ok);opacity:0;transition:opacity .25s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--sub)}
+#last{min-height:2.6em;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:8px;background:var(--card);border-radius:10px;overflow:hidden}
+td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;font-variant-numeric:tabular-nums}
+td.n{text-align:right;font-weight:700}
+.note{color:var(--sub);font-size:13px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<h1>読み取り速さの試し（在庫・道具）</h1>
+<p class="note">はじめに作業と名前を1回だけ選び、「読み取り開始」。あとはQRやバーコードを次々に向けるだけで数えます。試し用のQRは <a href="sheet.html" target="_blank">こちらの紙（画面）</a>。</p>
+<div class="row">
+  <select id="mode">
+    <option>棚卸し</option><option>入庫</option><option>出庫</option><option>持ち出し</option><option>返却</option>
+  </select>
+  <input id="who" placeholder="名前" value="社長" style="width:7em">
+</div>
+<div class="row" style="margin-top:8px">
+  <button class="main" id="start">読み取り開始</button>
+  <button id="reset">数をゼロに</button>
+</div>
+<div id="reader"></div>
+<div id="last">まだ読んでいません</div>
+<div class="stats">
+  <div class="stat"><b id="total">0</b><span>読んだ回数</span></div>
+  <div class="stat"><b id="kinds">0</b><span>種類</span></div>
+  <div class="stat"><b id="avg">-</b><span>1件あたり秒</span></div>
+</div>
+<table><thead><tr><th>読んだ物</th><th style="text-align:right">数</th></tr></thead><tbody id="list"></tbody></table>
+<p class="note">同じ物を1秒以内に続けて読んだ時は2件に数えません（2度読み止め）。データはこのスマホの中だけで、どこにも送りません。</p>
+<div id="flash"></div>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let counts={},total=0,times=[],lastCode='',lastAt=0,scanner=null,ac=null;
+function beep(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=2200;g.gain.value=.15;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.07)}catch(e){}}
+function flash(){const f=$('flash');f.style.opacity=.35;setTimeout(()=>f.style.opacity=0,120)}
+function label(code){try{const j=JSON.parse(code);return j.n||code}catch(e){}return code.replace(/^NN:/,'')}
+function render(){
+  $('total').textContent=total;$('kinds').textContent=Object.keys(counts).length;
+  if(times.length>1){$('avg').textContent=((times[times.length-1]-times[0])/1000/(times.length-1)).toFixed(2)}
+  $('list').innerHTML='';
+  Object.entries(counts).sort((a,b)=>b[1].t-a[1].t).forEach(([k,v])=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=v.l;const b=document.createElement('td');b.className='n';b.textContent=v.c;tr.append(a,b);$('list').append(tr)});
+}
+function onScan(code){
+  const now=Date.now();
+  if(code===lastCode&&now-lastAt<1000){lastAt=now;return}
+  lastCode=code;lastAt=now;
+  const l=label(code);
+  counts[code]=counts[code]||{l,c:0,t:0};counts[code].c++;counts[code].t=now;total++;times.push(now);
+  beep();flash();if(navigator.vibrate)navigator.vibrate(40);
+  $('last').textContent=$('mode').value+'｜'+l+'｜'+$('who').value;
+  render();
+}
+$('start').onclick=async()=>{
+  beep();
+  if(scanner){await scanner.stop();scanner=null;$('start').textContent='読み取り開始';return}
+  scanner=new Html5Qrcode('reader',{experimentalFeatures:{useBarCodeDetectorIfSupported:true},verbose:false});
+  try{
+    await scanner.start({facingMode:'environment'},{fps:20,qrbox:(w,h)=>{const s=Math.floor(Math.min(w,h)*0.8);return{width:s,height:Math.floor(s*0.7)}}},onScan,()=>{});
+    $('start').textContent='止める';
+  }catch(e){$('last').textContent='カメラが使えませんでした：'+e;scanner=null}
+};
+$('reset').onclick=()=>{counts={};total=0;times=[];lastCode='';render();$('last').textContent='数をゼロにしました'};
+</script>
+</body>
+</html>
